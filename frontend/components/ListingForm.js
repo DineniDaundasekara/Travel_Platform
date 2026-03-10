@@ -69,28 +69,58 @@ export default function ListingForm({ initialData = {}, onSubmit, loading, submi
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
           <FiImage className="inline w-4 h-4 mr-1" />Image URL *
         </label>
-        <input
-          name="imageUrl"
-          value={form.imageUrl}
-          onChange={handleChange}
-          placeholder="https://images.unsplash.com/..."
-          required
-          className="input-field"
-        />
-        {form.imageUrl && !imageError && (
-          <div className="mt-2 rounded-xl overflow-hidden h-40 relative">
-            <Image src={form.imageUrl} alt="Preview" fill className="object-cover"
-              onError={() => setImageError(true)} unoptimized />
+        <div className="relative">
+          <input
+            name="imageUrl"
+            value={form.imageUrl}
+            onChange={handleChange}
+            placeholder="https://images.unsplash.com/..."
+            required
+            className={`input-field ${imageError ? 'border-red-300 focus:ring-red-500' : ''}`}
+          />
+          {form.imageUrl && !imageError && (
+            <div className="mt-3 rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all animate-in fade-in zoom-in duration-300">
+              <div className="h-48 relative">
+                <Image
+                  src={form.imageUrl}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                  onError={() => setImageError(true)}
+                  unoptimized
+                />
+              </div>
+              <div className="bg-gray-50 px-3 py-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-500">Image Preview</span>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, imageUrl: '' })}
+                  className="text-xs text-red-500 hover:text-red-600 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {imageError && (
+          <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg animate-in slide-in-from-top-2">
+            <p className="text-sm text-red-600 font-medium flex items-center gap-1.5">
+              <span className="text-lg">⚠️</span> Invalid Image URL
+            </p>
+            <p className="text-xs text-red-500 mt-1 leading-relaxed">
+              The link you used isn't a direct image file. Please <strong>Right-click</strong> an image online and select <strong>"Copy Image Address"</strong>.
+            </p>
           </div>
         )}
-        {imageError && (
-          <p className="text-xs text-red-500 mt-1">⚠️ Could not load image from this URL</p>
-        )}
-        <p className="text-xs text-gray-400 mt-1">
-          Tip: Use{' '}
-          <a href="https://unsplash.com" target="_blank" rel="noreferrer" className="text-emerald-500 underline">Unsplash</a>
-          {' '}for free high-quality travel photos.
-        </p>
+
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+          <span>Tip: URLs should end in .jpg, .png, or .webp</span>
+          <a href="https://unsplash.com" target="_blank" rel="noreferrer" className="text-emerald-500 hover:underline font-medium">
+            Search Unsplash
+          </a>
+        </div>
       </div>
 
       {/* Description */}
@@ -150,8 +180,8 @@ export default function ListingForm({ initialData = {}, onSubmit, loading, submi
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             Saving...
           </span>

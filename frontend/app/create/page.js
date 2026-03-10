@@ -22,7 +22,7 @@ export default function CreatePage() {
     try {
       const res = await createListing(data);
       toast.success('Experience published! 🎉');
-      router.push(`/listings/${res.data._id}`);
+      router.push('/');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create listing');
     } finally {

@@ -7,21 +7,21 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-        },
-        ocean: {
-          500: '#0ea5e9',
-          600: '#0284c7',
-        }
-      },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        display: ['"Playfair Display"', 'serif'],
+        sans: ['"DM Sans"', 'sans-serif'],
+        mono: ['"DM Mono"', 'monospace'],
+      },
+      colors: {
+        sand: '#f5f0e8',
+        'sand-dark': '#ede5d8',
+        ink: '#0d0d0d',
+        gold: '#c9973a',
+        teal: '#2a7c6f',
+        coral: '#d45f3c',
+      },
+      scale: {
+        '108': '1.08',
       },
     },
   },

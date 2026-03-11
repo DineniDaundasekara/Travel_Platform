@@ -83,7 +83,7 @@ export default function HomePage() {
         {/* Decorative element */}
         <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block"
           style={{
-            background: 'radial-gradient(ellipse 70% 80% at 70% 40%, rgba(201,151,58,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 70% 80% at 70% 40%, rgba(201,151,58,0.15) 0%, transparent 10%)',
           }}
         />
       </section>

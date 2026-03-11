@@ -19,6 +19,12 @@
   --coral: #d45f3c;
   --sand: #f5f0e8;
   --sand-dark: #ede5d8;
+  
+  /* Transparency controls */
+  --hero-alpha-side: 0.5;
+  --hero-alpha-center: 0.1;
+  --card-overlay-alpha: 0.4;
+  --login-bg-opacity: 0.5;
 }
 
 * {
@@ -377,7 +383,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 40%, rgba(13, 13, 13, 0.65) 100%);
+  background: linear-gradient(to bottom, transparent 40%, rgba(13, 13, 13, var(--card-overlay-alpha)) 100%);
 }
 
 /* ── Noise texture overlay ── */
@@ -396,10 +402,13 @@ body {
 
 /* ── Hero gradient background ── */
 .hero-bg {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(201, 151, 58, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 100%, rgba(42, 124, 111, 0.06) 0%, transparent 60%),
-    var(--surface);
+  background-image:
+    linear-gradient(to bottom, rgba(250, 248, 245, var(--hero-alpha-side)) 0%, rgba(250, 248, 245, var(--hero-alpha-center)) 50%, rgba(250, 248, 245, var(--hero-alpha-side)) 100%),
+    url('/images/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
 }
 
 /* ── Gold accent line ── */

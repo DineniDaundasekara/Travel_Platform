@@ -34,7 +34,7 @@ export default function LoginPage() {
             backgroundImage: 'url(https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            opacity: 0.4,
+            opacity: 'var(--login-bg-opacity, 0.4)',
           }} />
         <div className="relative z-10">
           <p className="section-label mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>✦ Wanderlust</p>

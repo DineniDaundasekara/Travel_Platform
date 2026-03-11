@@ -3,7 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 import ListingCard from '@/components/ListingCard';
 import SearchBar from '@/components/SearchBar';
 import { getListings } from '@/lib/api';
-import { FiLoader, FiCompass } from 'react-icons/fi';
+import Link from 'next/link';
+import { FiArrowRight, FiLoader } from 'react-icons/fi';
+
+const STATS = [
+  { value: '120+', label: 'Destinations' },
+  { value: '2.4k', label: 'Experiences' },
+  { value: '18k', label: 'Travelers' },
+];
 
 export default function HomePage() {
   const [listings, setListings] = useState([]);
@@ -17,100 +24,131 @@ export default function HomePage() {
 
   const fetchListings = useCallback(async (reset = false) => {
     try {
-      if (reset) setLoading(true);
-      else setLoadingMore(true);
-
+      if (reset) setLoading(true); else setLoadingMore(true);
       const currentPage = reset ? 1 : page;
       const params = { page: currentPage, limit: 12 };
       if (search) params.search = search;
       if (category !== 'All') params.category = category;
-
       const res = await getListings(params);
       const { listings: newListings, pages, total: t } = res.data;
-
-      setListings(reset ? newListings : [...listings, ...newListings]);
+      setListings(reset ? newListings : (prev) => [...prev, ...newListings]);
       setTotalPages(pages);
       setTotal(t);
-      if (!reset) setPage(currentPage + 1);
-      else setPage(2);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [search, category, page, listings]);
+      if (!reset) setPage(currentPage + 1); else setPage(2);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); setLoadingMore(false); }
+  }, [search, category, page]);
 
-  useEffect(() => {
-    fetchListings(true);
-  }, [search, category]);
-
-  const handleSearch = (q) => { setSearch(q); setPage(1); };
-  const handleCategory = (c) => { setCategory(c); setPage(1); };
+  useEffect(() => { fetchListings(true); }, [search, category]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 rounded-full px-4 py-1.5 text-sm font-medium mb-4">
-          <FiCompass className="w-4 h-4" />
-          Discover Unique Experiences
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          Your Next Adventure Awaits
-        </h1>
-        <p className="text-gray-500 text-lg max-w-xl mx-auto">
-          Explore hand-picked travel experiences from passionate local guides around the world.
-        </p>
-      </div>
+    <div>
+      {/* ── Hero ── */}
+      <section className="hero-bg noise-overlay relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-20 pb-16 relative z-10">
+          <div className="max-w-3xl">
+            <p className="section-label animate-fade-up stagger-1 mb-5">✦ Curated Travel Experiences</p>
+            <h1 className="font-display animate-fade-up stagger-2 mb-6 leading-[1.1]"
+              style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: 'var(--ink)', fontWeight: 900 }}>
+              Discover the World's<br />
+              <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>Hidden Wonders</span>
+            </h1>
+            <p className="animate-fade-up stagger-3 mb-8 text-lg leading-relaxed max-w-xl"
+              style={{ color: 'var(--ink-soft)' }}>
+              Hand-picked experiences from passionate local guides. Every journey tells a story worth living.
+            </p>
 
-      {/* Search & Filter */}
-      <div className="mb-8">
-        <SearchBar onSearch={handleSearch} onCategoryChange={handleCategory} activeCategory={category} />
-      </div>
+            <div className="flex items-center gap-4 animate-fade-up stagger-4">
+              <Link href="/auth/register" className="btn-gold">
+                Start Exploring <FiArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="/create" className="btn-outline">
+                Share an Experience
+              </Link>
+            </div>
 
-      {/* Results count */}
-      {!loading && (
-        <p className="text-sm text-gray-500 mb-4">{total} experience{total !== 1 ? 's' : ''} found</p>
-      )}
+            {/* Stats */}
+            <div className="flex items-center gap-10 mt-12 pt-10 border-t animate-fade-up stagger-5"
+              style={{ borderColor: 'var(--border)' }}>
+              {STATS.map((s) => (
+                <div key={s.label}>
+                  <p className="font-display text-2xl font-bold" style={{ color: 'var(--ink)' }}>{s.value}</p>
+                  <p className="section-label mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <FiLoader className="w-8 h-8 text-emerald-500 animate-spin" />
+        {/* Decorative element */}
+        <div className="absolute right-0 top-0 w-1/2 h-full opacity-30 pointer-events-none hidden lg:block"
+          style={{
+            background: 'radial-gradient(ellipse 70% 80% at 70% 40%, rgba(201,151,58,0.15) 0%, transparent 70%)',
+          }}
+        />
+      </section>
+
+      {/* ── Feed ── */}
+      <section className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+        {/* Search */}
+        <div className="mb-8">
+          <SearchBar onSearch={setSearch} onCategoryChange={setCategory} activeCategory={category} />
         </div>
-      ) : listings.length === 0 ? (
-        <div className="text-center py-20">
-          <FiCompass className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-500 mb-1">No experiences found</h3>
-          <p className="text-gray-400 text-sm">Try a different search or category.</p>
-        </div>
-      ) : (
-        <>
+
+        {/* Count */}
+        {!loading && (
+          <div className="flex items-center justify-between mb-6">
+            <p className="section-label">
+              {total} experience{total !== 1 ? 's' : ''} {search ? `for "${search}"` : 'worldwide'}
+            </p>
+          </div>
+        )}
+
+        {/* Grid */}
+        {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {listings.map((listing) => (
-              <ListingCard key={listing._id} listing={listing} />
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="rounded overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+                <div className="skeleton h-48 w-full" />
+                <div className="p-4 space-y-3">
+                  <div className="skeleton h-4 w-3/4" />
+                  <div className="skeleton h-3 w-1/2" />
+                  <div className="skeleton h-3 w-full" />
+                  <div className="skeleton h-3 w-2/3" />
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Load More */}
-          {page <= totalPages && (
-            <div className="text-center mt-10">
-              <button
-                onClick={() => fetchListings(false)}
-                disabled={loadingMore}
-                className="btn-secondary"
-              >
-                {loadingMore ? (
-                  <span className="flex items-center gap-2">
-                    <FiLoader className="w-4 h-4 animate-spin" /> Loading...
-                  </span>
-                ) : 'Load More'}
-              </button>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-24">
+            <p className="font-display text-5xl mb-4" style={{ color: 'var(--border)' }}>✦</p>
+            <h3 className="font-display text-xl mb-2" style={{ color: 'var(--ink-soft)' }}>No experiences found</h3>
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>Try adjusting your search or explore a different category.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {listings.map((listing, i) => (
+                <div key={listing._id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${(i % 8) * 0.05}s`, opacity: 0 }}>
+                  <ListingCard listing={listing} />
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
+
+            {page <= totalPages && (
+              <div className="flex justify-center mt-12">
+                <button onClick={() => fetchListings(false)} disabled={loadingMore} className="btn-outline gap-3">
+                  {loadingMore
+                    ? <><FiLoader className="w-4 h-4 animate-spin" /> Loading...</>
+                    : 'Load More Experiences'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { getListing, updateListing } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import ListingForm from '@/components/ListingForm';
 import toast from 'react-hot-toast';
-import { FiEdit2, FiLoader } from 'react-icons/fi';
+import { FiArrowLeft, FiLoader } from 'react-icons/fi';
 import Link from 'next/link';
 
 export default function EditListingPage() {
@@ -21,70 +21,49 @@ export default function EditListingPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await getListing(id);
-        if (res.data.creator?._id !== user?._id) {
-          toast.error('Not authorized');
-          router.push('/');
-          return;
-        }
-        setListing(res.data);
-      } catch {
-        toast.error('Listing not found');
-        router.push('/');
-      } finally {
-        setLoading(false);
+    if (!user) return;
+    getListing(id).then(res => {
+      if (res.data.creator?._id !== user._id) {
+        toast.error('Not authorized'); router.push('/'); return;
       }
-    };
-    if (user) fetch();
+      setListing(res.data);
+    }).catch(() => { toast.error('Not found'); router.push('/'); })
+      .finally(() => setLoading(false));
   }, [id, user]);
 
   const handleSubmit = async (data) => {
     setSubmitting(true);
     try {
       await updateListing(id, data);
-      toast.success('Listing updated!');
+      toast.success('Listing updated ✦');
       router.push(`/listings/${id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Update failed');
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   if (loading || authLoading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <FiLoader className="w-8 h-8 text-emerald-500 animate-spin" />
+      <FiLoader className="w-7 h-7 animate-spin" style={{ color: 'var(--gold)' }} />
     </div>
   );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-          <FiEdit2 className="w-5 h-5 text-emerald-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Experience</h1>
-          <p className="text-gray-500 text-sm">Update your listing details</p>
-        </div>
-      </div>
+    <div className="max-w-2xl mx-auto px-6 py-10 animate-fade-up">
+      <Link href={`/listings/${id}`} className="inline-flex items-center gap-2 text-sm mb-8 hover:opacity-60 transition-opacity"
+        style={{ color: 'var(--muted)' }}>
+        <FiArrowLeft className="w-4 h-4" /> Back to listing
+      </Link>
 
-      <div className="card p-6">
+      <span className="accent-line" />
+      <h1 className="font-display text-3xl font-bold mb-1" style={{ color: 'var(--ink)' }}>Edit Experience</h1>
+      <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Update your listing details.</p>
+
+      <div className="p-8 rounded" style={{ background: 'var(--white)', border: '1px solid var(--border)' }}>
         {listing && (
-          <ListingForm
-            initialData={listing}
-            onSubmit={handleSubmit}
-            loading={submitting}
-            submitLabel="Save Changes"
-          />
+          <ListingForm initialData={listing} onSubmit={handleSubmit} loading={submitting} submitLabel="Save Changes" />
         )}
       </div>
-
-      <p className="text-center text-sm text-gray-400 mt-4">
-        <Link href={`/listings/${id}`} className="text-emerald-500 hover:underline">Cancel</Link>
-      </p>
     </div>
   );
 }

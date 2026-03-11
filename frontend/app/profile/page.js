@@ -1,191 +1,148 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { getListing, toggleLike, toggleSave, deleteListing } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
+import { getUserListings, updateProfile } from '@/lib/api';
+import ListingCard from '@/components/ListingCard';
 import Image from 'next/image';
-import Link from 'next/link';
-import { timeAgo, formatPrice, CATEGORY_COLORS, getAvatarUrl } from '@/lib/utils';
-import { FiMapPin, FiHeart, FiBookmark, FiEdit2, FiTrash2, FiArrowLeft, FiDollarSign, FiUser, FiLoader } from 'react-icons/fi';
+import { getAvatarUrl } from '@/lib/utils';
 import toast from 'react-hot-toast';
+import { FiEdit2, FiSave, FiX, FiLoader, FiCompass, FiPlus } from 'react-icons/fi';
+import Link from 'next/link';
 
-export default function ListingDetailPage() {
-  const { id } = useParams();
+export default function ProfilePage() {
+  const { user, loading: authLoading, updateUser } = useAuth();
   const router = useRouter();
-  const { user } = useAuth();
-  const [listing, setListing] = useState(null);
+  const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [likes, setLikes] = useState(0);
-  const [saves, setSaves] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ name: '', bio: '', avatar: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await getListing(id);
-        setListing(res.data);
-        setLikes(res.data.likes?.length || 0);
-        setSaves(res.data.saved?.length || 0);
-        setIsLiked(res.data.likes?.includes(user?._id));
-        setIsSaved(res.data.saved?.includes(user?._id));
-      } catch {
-        toast.error('Listing not found');
-        router.push('/');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, [id, user]);
+    if (!authLoading && !user) router.push('/auth/login');
+    if (user) setForm({ name: user.name, bio: user.bio || '', avatar: user.avatar || '' });
+  }, [user, authLoading, router]);
 
-  const handleLike = async () => {
-    if (!user) { toast.error('Login to like'); return; }
-    const res = await toggleLike(id);
-    setLikes(res.data.likes);
-    setIsLiked(res.data.isLiked);
-  };
+  useEffect(() => {
+    if (user) {
+      getUserListings(user._id)
+        .then(res => setListings(res.data))
+        .finally(() => setLoading(false));
+    }
+  }, [user]);
 
   const handleSave = async () => {
-    if (!user) { toast.error('Login to save'); return; }
-    const res = await toggleSave(id);
-    setSaves(res.data.saved);
-    setIsSaved(res.data.isSaved);
-    toast.success(res.data.isSaved ? 'Saved to your list!' : 'Removed from saved');
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Delete this listing?')) return;
-    setDeleting(true);
+    setSaving(true);
     try {
-      await deleteListing(id);
-      toast.success('Listing deleted');
-      router.push('/');
-    } catch {
-      toast.error('Failed to delete');
-      setDeleting(false);
-    }
+      const res = await updateProfile(form);
+      updateUser(res.data);
+      toast.success('Profile updated ✦');
+      setEditing(false);
+    } catch { toast.error('Update failed'); }
+    finally { setSaving(false); }
   };
 
-  const isOwner = user && listing && listing.creator?._id === user._id;
-
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <FiLoader className="w-8 h-8 text-emerald-500 animate-spin" />
-    </div>
-  );
-
-  if (!listing) return null;
+  if (authLoading || !user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Back Button */}
-      <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors">
-        <FiArrowLeft className="w-4 h-4" />
-        Back to Feed
-      </Link>
+    <div className="max-w-6xl mx-auto px-6 lg:px-8 py-10 animate-fade-in">
+      {/* Profile header */}
+      <div className="mb-12">
+        <div className="p-8 rounded" style={{ background: 'var(--white)', border: '1px solid var(--border)' }}>
+          <div className="flex items-start gap-6">
+            <div className="relative flex-shrink-0">
+              <Image src={getAvatarUrl(user)} alt={user.name}
+                width={88} height={88}
+                className="rounded object-cover"
+                style={{ border: '3px solid var(--border)' }}
+                unoptimized />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-sm flex items-center justify-center"
+                style={{ background: 'var(--gold)' }}>
+                <span className="text-white text-xs font-bold">✦</span>
+              </div>
+            </div>
 
-      <div className="card overflow-hidden">
-        {/* Hero Image */}
-        <div className="relative h-80 w-full">
-          <Image
-            src={listing.imageUrl}
-            alt={listing.title}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-          {listing.category && listing.category !== 'Other' && (
-            <span className={`badge absolute top-4 left-4 ${CATEGORY_COLORS[listing.category]}`}>
-              {listing.category}
-            </span>
-          )}
-          {/* Action buttons */}
-          <div className="absolute top-4 right-4 flex gap-2">
-            <button onClick={handleLike}
-              className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${isLiked ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'}`}>
-              <FiHeart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
-            <button onClick={handleSave}
-              className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${isSaved ? 'bg-emerald-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'}`}>
-              <FiBookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{listing.title}</h1>
-              <div className="flex items-center gap-1.5 text-gray-500">
-                <FiMapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="text-lg">{listing.location}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-emerald-600">
-                {formatPrice(listing.price, listing.currency)}
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">per person</div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-100">
-            <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-              <FiHeart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-              {likes} {likes === 1 ? 'like' : 'likes'}
-            </span>
-            <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-              <FiBookmark className={`w-4 h-4 ${isSaved ? 'fill-emerald-500 text-emerald-500' : ''}`} />
-              {saves} saved
-            </span>
-            <span className="text-gray-400 text-sm ml-auto">{timeAgo(listing.createdAt)}</span>
-          </div>
-
-          {/* Description */}
-          <div className="mb-6">
-            <h2 className="font-semibold text-gray-900 mb-2">About this experience</h2>
-            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{listing.description}</p>
-          </div>
-
-          {/* Creator Card */}
-          <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3 mb-5">
-            <Image
-              src={getAvatarUrl(listing.creator)}
-              alt={listing.creator?.name}
-              width={48}
-              height={48}
-              className="rounded-full object-cover"
-              unoptimized
-            />
-            <div>
-              <div className="flex items-center gap-1 text-sm text-gray-500 mb-0.5">
-                <FiUser className="w-3.5 h-3.5" /> Experience by
-              </div>
-              <p className="font-semibold text-gray-900">{listing.creator?.name}</p>
-              {listing.creator?.bio && (
-                <p className="text-sm text-gray-500 mt-0.5">{listing.creator.bio}</p>
+              {editing ? (
+                <div className="space-y-3 max-w-md">
+                  <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                    className="input-editorial font-display text-xl font-bold" placeholder="Your name" />
+                  <textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}
+                    className="input-editorial resize-none text-sm" rows={2}
+                    placeholder="A short bio..." maxLength={200} />
+                  <input value={form.avatar} onChange={e => setForm({ ...form, avatar: e.target.value })}
+                    className="input-editorial text-sm" placeholder="Avatar URL (optional)" />
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={handleSave} disabled={saving} className="btn-gold py-2 px-4 text-xs">
+                      <FiSave className="w-3.5 h-3.5" />
+                      {saving ? 'Saving...' : 'Save Profile'}
+                    </button>
+                    <button onClick={() => setEditing(false)} className="btn-outline py-2 px-4 text-xs">
+                      <FiX className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="font-display text-3xl font-bold" style={{ color: 'var(--ink)' }}>{user.name}</h1>
+                    <button onClick={() => setEditing(true)} className="btn-ghost p-1.5">
+                      <FiEdit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-sm mb-2" style={{ color: 'var(--muted)' }}>{user.email}</p>
+                  {user.bio && (
+                    <p className="text-sm leading-relaxed mb-3 max-w-lg" style={{ color: 'var(--ink-soft)' }}>{user.bio}</p>
+                  )}
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <span className="font-display text-xl font-bold" style={{ color: 'var(--ink)' }}>{listings.length}</span>
+                      <span className="section-label ml-2">experience{listings.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          </div>
 
-          {/* Owner Actions */}
-          {isOwner && (
-            <div className="flex gap-3 pt-4 border-t border-gray-100">
-              <Link href={`/listings/${listing._id}/edit`} className="btn-secondary flex items-center gap-2">
-                <FiEdit2 className="w-4 h-4" /> Edit Listing
+            {!editing && (
+              <Link href="/create" className="btn-gold text-xs py-2.5 hidden sm:inline-flex">
+                <FiPlus className="w-3.5 h-3.5" /> New Experience
               </Link>
-              <button onClick={handleDelete} disabled={deleting} className="btn-danger flex items-center gap-2">
-                <FiTrash2 className="w-4 h-4" />
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Listings grid */}
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <span className="accent-line" style={{ marginBottom: '8px' }} />
+          <h2 className="font-display text-2xl font-bold" style={{ color: 'var(--ink)' }}>My Experiences</h2>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <FiLoader className="w-7 h-7 animate-spin" style={{ color: 'var(--gold)' }} />
+        </div>
+      ) : listings.length === 0 ? (
+        <div className="text-center py-20 rounded" style={{ background: 'var(--sand)', border: '1px solid var(--border)' }}>
+          <p className="font-display text-5xl mb-4" style={{ color: 'var(--border)' }}>✦</p>
+          <h3 className="font-display text-xl mb-2" style={{ color: 'var(--ink-soft)' }}>No experiences yet</h3>
+          <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>Share your first travel experience with the world.</p>
+          <Link href="/create" className="btn-gold">Create Experience</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {listings.map((listing, i) => (
+            <div key={listing._id} className="animate-fade-up"
+              style={{ animationDelay: `${i * 0.06}s`, opacity: 0 }}>
+              <ListingCard listing={listing} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

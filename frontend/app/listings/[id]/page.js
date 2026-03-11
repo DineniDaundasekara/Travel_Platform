@@ -5,8 +5,8 @@ import { getListing, toggleLike, toggleSave, deleteListing } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
-import { timeAgo, formatPrice, CATEGORY_COLORS, getAvatarUrl } from '@/lib/utils';
-import { FiMapPin, FiHeart, FiBookmark, FiEdit2, FiTrash2, FiArrowLeft, FiDollarSign, FiUser, FiLoader } from 'react-icons/fi';
+import { timeAgo, formatPrice, getAvatarUrl } from '@/lib/utils';
+import { FiMapPin, FiHeart, FiBookmark, FiEdit2, FiTrash2, FiArrowLeft, FiLoader, FiUser } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ListingDetailPage() {
@@ -22,168 +22,174 @@ export default function ListingDetailPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await getListing(id);
+    getListing(id)
+      .then(res => {
         setListing(res.data);
         setLikes(res.data.likes?.length || 0);
         setSaves(res.data.saved?.length || 0);
         setIsLiked(res.data.likes?.includes(user?._id));
         setIsSaved(res.data.saved?.includes(user?._id));
-      } catch {
-        toast.error('Listing not found');
-        router.push('/');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
+      })
+      .catch(() => { toast.error('Listing not found'); router.push('/'); })
+      .finally(() => setLoading(false));
   }, [id, user]);
 
   const handleLike = async () => {
-    if (!user) { toast.error('Login to like'); return; }
+    if (!user) { toast.error('Sign in to like'); return; }
     const res = await toggleLike(id);
-    setLikes(res.data.likes);
-    setIsLiked(res.data.isLiked);
+    setLikes(res.data.likes); setIsLiked(res.data.isLiked);
   };
 
   const handleSave = async () => {
-    if (!user) { toast.error('Login to save'); return; }
+    if (!user) { toast.error('Sign in to save'); return; }
     const res = await toggleSave(id);
-    setSaves(res.data.saved);
-    setIsSaved(res.data.isSaved);
-    toast.success(res.data.isSaved ? 'Saved to your list!' : 'Removed from saved');
+    setSaves(res.data.saved); setIsSaved(res.data.isSaved);
+    toast.success(res.data.isSaved ? 'Saved ✦' : 'Removed from saved');
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this listing?')) return;
+    if (!confirm('Delete this listing? This cannot be undone.')) return;
     setDeleting(true);
     try {
       await deleteListing(id);
       toast.success('Listing deleted');
       router.push('/');
-    } catch {
-      toast.error('Failed to delete');
-      setDeleting(false);
-    }
+    } catch { toast.error('Failed to delete'); setDeleting(false); }
   };
 
   const isOwner = user && listing && listing.creator?._id === user._id;
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <FiLoader className="w-8 h-8 text-emerald-500 animate-spin" />
+      <FiLoader className="w-7 h-7 animate-spin" style={{ color: 'var(--gold)' }} />
     </div>
   );
-
   if (!listing) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Back Button */}
-      <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors">
-        <FiArrowLeft className="w-4 h-4" />
-        Back to Feed
+    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-10 animate-fade-in">
+      <Link href="/" className="inline-flex items-center gap-2 text-sm mb-8 transition-opacity hover:opacity-60"
+        style={{ color: 'var(--muted)' }}>
+        <FiArrowLeft className="w-4 h-4" /> Back to explore
       </Link>
 
-      <div className="card overflow-hidden">
-        {/* Hero Image */}
-        <div className="relative h-80 w-full">
-          <Image
-            src={listing.imageUrl}
-            alt={listing.title}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-          {listing.category && listing.category !== 'Other' && (
-            <span className={`badge absolute top-4 left-4 ${CATEGORY_COLORS[listing.category]}`}>
-              {listing.category}
-            </span>
-          )}
-          {/* Action buttons */}
-          <div className="absolute top-4 right-4 flex gap-2">
-            <button onClick={handleLike}
-              className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${isLiked ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'}`}>
-              <FiHeart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
-            <button onClick={handleSave}
-              className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${isSaved ? 'bg-emerald-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-white'}`}>
-              <FiBookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{listing.title}</h1>
-              <div className="flex items-center gap-1.5 text-gray-500">
-                <FiMapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="text-lg">{listing.location}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-emerald-600">
-                {formatPrice(listing.price, listing.currency)}
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">per person</div>
-            </div>
+      <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
+        {/* Main content */}
+        <div>
+          {/* Hero image */}
+          <div className="relative h-[420px] rounded overflow-hidden img-overlay mb-8">
+            <Image src={listing.imageUrl} alt={listing.title} fill
+              className="object-cover" unoptimized />
+            {listing.category && listing.category !== 'Other' && (
+              <span className="tag tag-dark absolute top-5 left-5 z-20">{listing.category}</span>
+            )}
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-100">
-            <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-              <FiHeart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-              {likes} {likes === 1 ? 'like' : 'likes'}
-            </span>
-            <span className="flex items-center gap-1.5 text-gray-500 text-sm">
-              <FiBookmark className={`w-4 h-4 ${isSaved ? 'fill-emerald-500 text-emerald-500' : ''}`} />
-              {saves} saved
-            </span>
-            <span className="text-gray-400 text-sm ml-auto">{timeAgo(listing.createdAt)}</span>
+          {/* Title block */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <FiMapPin className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--gold)' }} />
+              <span className="section-label">{listing.location}</span>
+            </div>
+            <h1 className="font-display text-4xl font-bold leading-tight mb-2" style={{ color: 'var(--ink)' }}>
+              {listing.title}
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--muted)' }}>
+              Published {timeAgo(listing.createdAt)}
+            </p>
           </div>
+
+          {/* Divider */}
+          <div className="h-px mb-6" style={{ background: 'var(--border)' }} />
 
           {/* Description */}
-          <div className="mb-6">
-            <h2 className="font-semibold text-gray-900 mb-2">About this experience</h2>
-            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{listing.description}</p>
+          <div className="mb-8">
+            <p className="section-label mb-3">About this experience</p>
+            <p className="leading-relaxed whitespace-pre-line text-base"
+              style={{ color: 'var(--ink-soft)', lineHeight: '1.8' }}>
+              {listing.description}
+            </p>
           </div>
 
-          {/* Creator Card */}
-          <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3 mb-5">
-            <Image
-              src={getAvatarUrl(listing.creator)}
-              alt={listing.creator?.name}
-              width={48}
-              height={48}
-              className="rounded-full object-cover"
-              unoptimized
-            />
-            <div>
-              <div className="flex items-center gap-1 text-sm text-gray-500 mb-0.5">
-                <FiUser className="w-3.5 h-3.5" /> Experience by
-              </div>
-              <p className="font-semibold text-gray-900">{listing.creator?.name}</p>
-              {listing.creator?.bio && (
-                <p className="text-sm text-gray-500 mt-0.5">{listing.creator.bio}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Owner Actions */}
+          {/* Owner actions */}
           {isOwner && (
-            <div className="flex gap-3 pt-4 border-t border-gray-100">
-              <Link href={`/listings/${listing._id}/edit`} className="btn-secondary flex items-center gap-2">
-                <FiEdit2 className="w-4 h-4" /> Edit Listing
+            <div className="flex gap-3 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+              <Link href={`/listings/${listing._id}/edit`} className="btn-outline gap-2 text-xs py-2.5">
+                <FiEdit2 className="w-3.5 h-3.5" /> Edit Listing
               </Link>
-              <button onClick={handleDelete} disabled={deleting} className="btn-danger flex items-center gap-2">
-                <FiTrash2 className="w-4 h-4" />
+              <button onClick={handleDelete} disabled={deleting}
+                className="btn-outline gap-2 text-xs py-2.5 transition-colors"
+                style={{ color: 'var(--coral)', borderColor: 'rgba(212,95,60,0.3)' }}>
+                <FiTrash2 className="w-3.5 h-3.5" />
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Price card */}
+          <div className="p-6 rounded" style={{ background: 'var(--ink)' }}>
+            <p className="section-label mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Price per person</p>
+            <p className="font-display text-4xl font-bold" style={{ color: 'var(--gold-light)' }}>
+              {formatPrice(listing.price, listing.currency)}
+            </p>
+            <div className="flex gap-2 mt-5">
+              <button onClick={handleLike}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded text-sm font-medium transition-all"
+                style={{
+                  background: isLiked ? 'rgba(212,95,60,0.2)' : 'rgba(255,255,255,0.08)',
+                  color: isLiked ? '#e8846a' : 'rgba(255,255,255,0.6)',
+                  border: `1px solid ${isLiked ? 'rgba(212,95,60,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                }}>
+                <FiHeart className="w-4 h-4" style={{ fill: isLiked ? 'currentColor' : 'none' }} />
+                {likes}
+              </button>
+              <button onClick={handleSave}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded text-sm font-medium transition-all"
+                style={{
+                  background: isSaved ? 'rgba(201,151,58,0.2)' : 'rgba(255,255,255,0.08)',
+                  color: isSaved ? 'var(--gold-light)' : 'rgba(255,255,255,0.6)',
+                  border: `1px solid ${isSaved ? 'rgba(201,151,58,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                }}>
+                <FiBookmark className="w-4 h-4" style={{ fill: isSaved ? 'currentColor' : 'none' }} />
+                Save
+              </button>
+            </div>
+          </div>
+
+          {/* Creator card */}
+          <div className="p-5 rounded" style={{ background: 'var(--white)', border: '1px solid var(--border)' }}>
+            <p className="section-label mb-4">Experience by</p>
+            <div className="flex items-center gap-3">
+              <Image src={getAvatarUrl(listing.creator)} alt={listing.creator?.name}
+                width={44} height={44} className="rounded object-cover" unoptimized />
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{listing.creator?.name}</p>
+                {listing.creator?.bio && (
+                  <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--muted)' }}>
+                    {listing.creator.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="p-5 rounded" style={{ background: 'var(--sand)', border: '1px solid var(--border)' }}>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Likes', value: likes },
+                { label: 'Saves', value: saves },
+              ].map(stat => (
+                <div key={stat.label}>
+                  <p className="font-display text-2xl font-bold" style={{ color: 'var(--ink)' }}>{stat.value}</p>
+                  <p className="section-label mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

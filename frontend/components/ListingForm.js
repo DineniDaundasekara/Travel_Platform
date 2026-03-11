@@ -2,9 +2,19 @@
 import { useState } from 'react';
 import { CATEGORIES } from '@/lib/utils';
 import Image from 'next/image';
-import { FiImage, FiMapPin, FiDollarSign, FiTag, FiFileText, FiType } from 'react-icons/fi';
+import { FiImage, FiMapPin, FiDollarSign, FiTag, FiFileText, FiType, FiAlertCircle } from 'react-icons/fi';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'AUD', 'LKR', 'JPY'];
+
+function FieldLabel({ icon: Icon, children, optional }) {
+  return (
+    <label className="flex items-center gap-1.5 mb-2">
+      <Icon className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
+      <span className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>{children}</span>
+      {optional && <span className="section-label ml-1">optional</span>}
+    </label>
+  );
+}
 
 export default function ListingForm({ initialData = {}, onSubmit, loading, submitLabel = 'Publish Experience' }) {
   const [form, setForm] = useState({
@@ -16,151 +26,87 @@ export default function ListingForm({ initialData = {}, onSubmit, loading, submi
     currency: initialData.currency || 'USD',
     category: initialData.category || 'Other',
   });
-  const [imageError, setImageError] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (e.target.name === 'imageUrl') setImageError(false);
+  const set = (field) => (e) => {
+    setForm({ ...form, [field]: e.target.value });
+    if (field === 'imageUrl') setImgError(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...form,
-      price: form.price ? parseFloat(form.price) : null,
-    });
+    onSubmit({ ...form, price: form.price ? parseFloat(form.price) : null });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          <FiType className="inline w-4 h-4 mr-1" />Experience Title *
-        </label>
-        <input
-          name="title"
-          value={form.title}
-          onChange={handleChange}
+        <FieldLabel icon={FiType}>Experience Title</FieldLabel>
+        <input name="title" value={form.title} onChange={set('title')}
           placeholder="e.g., Sunset Boat Tour in Bali"
-          required
-          minLength={3}
-          className="input-field"
-        />
+          required minLength={3} className="input-editorial" />
       </div>
 
       {/* Location */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          <FiMapPin className="inline w-4 h-4 mr-1" />Location *
-        </label>
-        <input
-          name="location"
-          value={form.location}
-          onChange={handleChange}
-          placeholder="e.g., Bali, Indonesia"
-          required
-          className="input-field"
-        />
+        <FieldLabel icon={FiMapPin}>Location</FieldLabel>
+        <input name="location" value={form.location} onChange={set('location')}
+          placeholder="e.g., Bali, Indonesia" required className="input-editorial" />
       </div>
 
       {/* Image URL */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          <FiImage className="inline w-4 h-4 mr-1" />Image URL *
-        </label>
-        <div className="relative">
-          <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
-            placeholder="https://images.unsplash.com/..."
-            required
-            className={`input-field ${imageError ? 'border-red-300 focus:ring-red-500' : ''}`}
-          />
-          {form.imageUrl && !imageError && (
-            <div className="mt-3 rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all animate-in fade-in zoom-in duration-300">
-              <div className="h-48 relative">
-                <Image
-                  src={form.imageUrl}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
-                  onError={() => setImageError(true)}
-                  unoptimized
-                />
-              </div>
-              <div className="bg-gray-50 px-3 py-2 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-500">Image Preview</span>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, imageUrl: '' })}
-                  className="text-xs text-red-500 hover:text-red-600 font-medium"
-                >
-                  Remove
-                </button>
-              </div>
+        <FieldLabel icon={FiImage}>Image URL</FieldLabel>
+        <input name="imageUrl" value={form.imageUrl} onChange={set('imageUrl')}
+          placeholder="https://images.unsplash.com/..." required className="input-editorial" />
+        {form.imageUrl && !imgError && (
+          <div className="mt-3 rounded overflow-hidden relative h-44 border" style={{ borderColor: 'var(--border)' }}>
+            <Image src={form.imageUrl} alt="Preview" fill className="object-cover"
+              onError={() => setImgError(true)} unoptimized />
+            <div className="absolute inset-0 flex items-end p-3"
+              style={{ background: 'linear-gradient(to top, rgba(13,13,13,0.4) 0%, transparent 60%)' }}>
+              <span className="text-xs text-white font-medium">Preview</span>
             </div>
-          )}
-        </div>
-
-        {imageError && (
-          <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg animate-in slide-in-from-top-2">
-            <p className="text-sm text-red-600 font-medium flex items-center gap-1.5">
-              <span className="text-lg">⚠️</span> Invalid Image URL
-            </p>
-            <p className="text-xs text-red-500 mt-1 leading-relaxed">
-              The link you used isn't a direct image file. Please <strong>Right-click</strong> an image online and select <strong>"Copy Image Address"</strong>.
-            </p>
           </div>
         )}
-
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-          <span>Tip: URLs should end in .jpg, .png, or .webp</span>
-          <a href="https://unsplash.com" target="_blank" rel="noreferrer" className="text-emerald-500 hover:underline font-medium">
-            Search Unsplash
-          </a>
-        </div>
+        {imgError && (
+          <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: 'var(--coral)' }}>
+            <FiAlertCircle className="w-3.5 h-3.5" />
+            Could not load image. Please check the URL.
+          </div>
+        )}
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>
+          Use <a href="https://unsplash.com" target="_blank" rel="noreferrer"
+            style={{ color: 'var(--gold)' }} className="underline underline-offset-2">Unsplash</a> for free high-quality travel photos.
+        </p>
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          <FiFileText className="inline w-4 h-4 mr-1" />Description *
-        </label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          placeholder="Describe the experience in detail..."
-          required
-          minLength={10}
-          rows={5}
-          className="input-field resize-none"
-        />
-        <p className="text-xs text-gray-400 mt-1">{form.description.length}/2000 characters</p>
+        <FieldLabel icon={FiFileText}>Description</FieldLabel>
+        <textarea name="description" value={form.description} onChange={set('description')}
+          placeholder="Describe the experience in vivid detail — what will guests see, feel, and take away?"
+          required minLength={10} rows={5}
+          className="input-editorial resize-none" />
+        <div className="flex justify-between mt-1.5">
+          <span className="text-xs" style={{ color: 'var(--muted)' }}>Be descriptive — it builds trust with travelers</span>
+          <span className="text-xs" style={{ color: form.description.length > 1800 ? 'var(--coral)' : 'var(--muted)', fontFamily: "'DM Mono', monospace" }}>
+            {form.description.length}/2000
+          </span>
+        </div>
       </div>
 
       {/* Price & Currency */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-            <FiDollarSign className="inline w-4 h-4 mr-1" />Price (optional)
-          </label>
-          <input
-            name="price"
-            type="number"
-            value={form.price}
-            onChange={handleChange}
-            placeholder="45"
-            min="0"
-            step="0.01"
-            className="input-field"
-          />
+          <FieldLabel icon={FiDollarSign} optional>Price</FieldLabel>
+          <input name="price" type="number" value={form.price} onChange={set('price')}
+            placeholder="45" min="0" step="0.01" className="input-editorial" />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Currency</label>
-          <select name="currency" value={form.currency} onChange={handleChange} className="input-field">
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--ink-soft)' }}>Currency</label>
+          <select name="currency" value={form.currency} onChange={set('currency')} className="input-editorial">
             {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -168,15 +114,28 @@ export default function ListingForm({ initialData = {}, onSubmit, loading, submi
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          <FiTag className="inline w-4 h-4 mr-1" />Category
-        </label>
-        <select name="category" value={form.category} onChange={handleChange} className="input-field">
-          {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <FieldLabel icon={FiTag}>Category</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.filter(c => c !== 'All').map((cat) => (
+            <button type="button" key={cat}
+              onClick={() => setForm({ ...form, category: cat })}
+              className="px-3.5 py-2 rounded text-xs font-medium transition-all"
+              style={{
+                background: form.category === cat ? 'var(--ink)' : 'var(--white)',
+                color: form.category === cat ? 'var(--white)' : 'var(--muted)',
+                border: `1px solid ${form.category === cat ? 'var(--ink)' : 'var(--border)'}`,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <button type="submit" disabled={loading} className="btn-primary w-full text-center py-3">
+      {/* Divider */}
+      <div className="divider-ornament">ready to publish</div>
+
+      <button type="submit" disabled={loading} className="btn-teal w-full py-3.5 text-sm">
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

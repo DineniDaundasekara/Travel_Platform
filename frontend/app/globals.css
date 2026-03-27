@@ -403,14 +403,13 @@ body {
 /* ── Hero gradient background ── */
 .hero-bg {
   background-image:
-    linear-gradient(to bottom, rgba(250, 248, 245, var(--hero-alpha-side)) 0%, rgba(250, 248, 245, var(--hero-alpha-center)) 50%, rgba(250, 248, 245, var(--hero-alpha-side)) 100%),
+    linear-gradient(to bottom, rgba(250, 248, 245, 0.2) 0%, rgba(250, 248, 245, 0.05) 50%, rgba(250, 248, 245, 0.2) 100%),
     url('/images/hero-bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
 }
-
 /* ── Gold accent line ── */
 .accent-line {
   display: block;

@@ -88,12 +88,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 p-4 rounded" style={{ background: 'var(--sand)', border: '1px solid var(--border)' }}>
-            <p className="section-label mb-1">Demo credentials</p>
-            <p className="text-xs" style={{ color: 'var(--ink-soft)', fontFamily: "'DM Mono', monospace" }}>
-              demo@wanderlust.com / password123
-            </p>
-          </div>
         </div>
       </div>
     </div>
